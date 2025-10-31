@@ -1,23 +1,25 @@
 package com.tinyparser;
 
 public enum TipoToken {
-    // Palabras clave
     IF, THEN, ELSE, END,
+    REPEAT, UNTIL,
+    READ, WRITE,
 
-    // Símbolos
     ASIGNACION, // :=
     IGUAL,      // =
-    MAYORQUE,   // >
-    MAS,        // +
-    MENOS,      // -
-    POR,        // *
-    ENTRE,      // /
+    MENORQUE,   // <
+
+    MAS,        // + (adop)
+    MENOS,      // - (adop)
+    POR,        // * (opmult)
+    ENTRE,      // / (opmult)
+
     PAREN_IZQ,  // (
     PAREN_DER,  // )
     PUNTOYCOMA, // ;
 
     // Literales y otros
-    ID,         // identificador (letras)
-    NUMERO,     // número (dígitos)
-    EOF         // Fin de Archivo (End of File)
+    ID,         // identificador
+    NUMERO,     // número
+    EOF         // Fin de Archivo
 }

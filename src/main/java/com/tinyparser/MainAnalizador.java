@@ -9,7 +9,6 @@ public class MainAnalizador {
     public static void main(String[] args) {
         try {
             // 1. Leer el archivo
-            // Nota: Esto asume que ProgramaTiny.txt está en la raíz del proyecto.
             String rutaArchivo = "ProgramaTiny.txt";
             String codigoFuente = Files.readString(Paths.get(rutaArchivo));
 

@@ -18,92 +18,108 @@ public class Parser {
     }
 
     public void parse() {
-        programa();
+        secuenciaSentencias();
         if (!esFin()) {
             throw error(peek(), "Se esperaba fin de archivo pero se encontró más código.");
         }
     }
 
-    // Regla: programa -> secuenciaSentencias
-    private void programa() {
-        secuenciaSentencias();
-    }
-
-    // Regla: secuenciaSentencias -> sentencia (PUNTOYCOMA sentencia)*
-    // Esta gramática asume que los punto y coma SEPARAN sentencias.
     private void secuenciaSentencias() {
+        // Ejecuta la primera sentencia (obligatoria)
         sentencia();
+
+        // Mientras haya un ';' separador, consume el ';' y espera OTRA sentencia
         while (coincidir(TipoToken.PUNTOYCOMA)) {
             sentencia();
         }
     }
 
-    // Regla: sentencia -> sentenciaIf | sentenciaAsignacion
     private void sentencia() {
-        if (peek().tipo == TipoToken.IF) {
+        TipoToken tipo = peek().tipo;
+
+        if (tipo == TipoToken.IF) {
             sentenciaIf();
-        } else if (peek().tipo == TipoToken.ID) {
+        } else if (tipo == TipoToken.REPEAT) {
+            sentenciaRepeat();
+        } else if (tipo == TipoToken.ID) {
             sentenciaAsignacion();
+        } else if (tipo == TipoToken.READ) {
+            sentenciaRead();
+        } else if (tipo == TipoToken.WRITE) {
+            sentenciaWrite();
         } else {
-            throw error(peek(), "Se esperaba una sentencia (if o asignación).");
+            throw error(peek(), "Se esperaba el inicio de una sentencia (if, repeat, id, read, write).");
         }
     }
 
-    // Regla: sentenciaIf -> IF condicion THEN secuenciaSentencias (ELSE secuenciaSentencias)? END
     private void sentenciaIf() {
         consumir(TipoToken.IF, "Se esperaba 'if'.");
-        condicion();
+        expresion();
         consumir(TipoToken.THEN, "Se esperaba 'then' después de la condición del if.");
         secuenciaSentencias();
         if (coincidir(TipoToken.ELSE)) {
             secuenciaSentencias();
         }
-        consumir(TipoToken.END, "Se esperaba 'end' para cerrar el 'if'."); // Captura bad_03_if_sin_end
+        consumir(TipoToken.END, "Se esperaba 'end' para cerrar el 'if'.");
     }
 
-    // Regla: sentenciaAsignacion -> ID ASIGNACION expresion
+    private void sentenciaRepeat() {
+        consumir(TipoToken.REPEAT, "Se esperaba 'repeat'.");
+        secuenciaSentencias();
+        consumir(TipoToken.UNTIL, "Se esperaba 'until' después del cuerpo del 'repeat'.");
+        expresion();
+    }
+
+    private void sentenciaRead() {
+        consumir(TipoToken.READ, "Se esperaba 'read'.");
+        consumir(TipoToken.ID, "Se esperaba un identificador (variable) después de 'read'.");
+    }
+
+    // Regla: sent-write -> WRITE exp
+    private void sentenciaWrite() {
+        consumir(TipoToken.WRITE, "Se esperaba 'write'.");
+        expresion();
+    }
+
+    // --- FIN DE NUEVAS REGLAS ---
+
     private void sentenciaAsignacion() {
         consumir(TipoToken.ID, "Se esperaba un identificador (variable).");
-        consumir(TipoToken.ASIGNACION, "Se esperaba ':=' para asignación."); // Captura bad_01_token_asig_mal
+        consumir(TipoToken.ASIGNACION, "Se esperaba ':=' para asignación.");
         expresion();
     }
 
-    // Regla: condicion -> expresion ( (IGUAL | MAYORQUE) expresion )
-    // Inferencia de los ejemplos: if y>3 [cite: 23] | if n=10 [cite: 33]
-    private void condicion() {
-        expresion();
-        if (coincidir(TipoToken.IGUAL) || coincidir(TipoToken.MAYORQUE)) {
-            expresion();
-        }
-        // Si no hay operador, es una expresión simple (que no parece ser el caso en Tiny,
-        // pero esta gramática lo permitiría. Para ser estricto, aquí se podría lanzar un error
-        // si no se encuentra = o >). Por simplicidad, la dejamos así.
-    }
-
-    // Las siguientes 3 reglas manejan la aritmética (precedencia de operadores)
-
-    // Regla: expresion -> termino ( (MAS | MENOS) termino )*
     private void expresion() {
-        termino();
-        while (coincidir(TipoToken.MAS) || coincidir(TipoToken.MENOS)) {
-            termino();
+        expSimple();
+        if (coincidir(TipoToken.MENORQUE) || coincidir(TipoToken.IGUAL)) {
+            expSimple();
         }
     }
 
-    // Regla: termino -> factor ( (POR | ENTRE) factor )*
-    private void termino() {
+    private void expSimple() {
+        // 1. Parsea la parte no recursiva (beta)
+        term();
+
+        // 2. Implementa el (opsuma term)* con un bucle
+        while (coincidir(TipoToken.MAS) || coincidir(TipoToken.MENOS)) {
+            // (alpha)
+            term();
+        }
+    }
+
+    private void term() {
         do {
             factor();
         } while (coincidir(TipoToken.POR) || coincidir(TipoToken.ENTRE));
     }
 
-    // Regla: factor -> NUMERO | ID | PAREN_IZQ expresion PAREN_DER
     private void factor() {
         if (coincidir(TipoToken.NUMERO) || coincidir(TipoToken.ID)) {
             // Ya se consumió, no hacer nada.
         } else if (coincidir(TipoToken.PAREN_IZQ)) {
+            // La gramática dice (exp), así que llamamos a expresion()
             expresion();
-            consumir(TipoToken.PAREN_DER, "Se esperaba ')' para cerrar la expresión."); // Captura bad_02_falta_paren
+            consumir(TipoToken.PAREN_DER, "Se esperaba ')' para cerrar la expresión.");
         } else {
             throw error(peek(), "Se esperaba un Número, un ID o un '('.");
         }
@@ -121,8 +137,11 @@ public class Parser {
         return false;
     }
 
-    private Token consumir(TipoToken tipo, String mensajeError) {
-        if (verificar(tipo)) return avanzar();
+    private void consumir(TipoToken tipo, String mensajeError) {
+        if (verificar(tipo)) {
+            avanzar();
+            return;
+        }
         throw error(peek(), mensajeError);
     }
 
@@ -131,9 +150,8 @@ public class Parser {
         return peek().tipo == tipo;
     }
 
-    private Token avanzar() {
+    private void avanzar() {
         if (!esFin()) actual++;
-        return previo();
     }
 
     private boolean esFin() {
@@ -142,10 +160,6 @@ public class Parser {
 
     private Token peek() {
         return tokens.get(actual);
-    }
-
-    private Token previo() {
-        return tokens.get(actual - 1);
     }
 
     private ErrorParse error(Token token, String mensaje) {

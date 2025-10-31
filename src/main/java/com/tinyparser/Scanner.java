@@ -1,6 +1,9 @@
 package com.tinyparser;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class Scanner {
     private final String fuente;
@@ -17,6 +20,10 @@ public class Scanner {
         palabrasClave.put("then", TipoToken.THEN);
         palabrasClave.put("else", TipoToken.ELSE);
         palabrasClave.put("end", TipoToken.END);
+        palabrasClave.put("repeat", TipoToken.REPEAT);
+        palabrasClave.put("until", TipoToken.UNTIL);
+        palabrasClave.put("read", TipoToken.READ);
+        palabrasClave.put("write", TipoToken.WRITE);
     }
 
     public Scanner(String fuente) {
@@ -44,18 +51,17 @@ public class Scanner {
             case '/': agregarToken(TipoToken.ENTRE); break;
             case ';': agregarToken(TipoToken.PUNTOYCOMA); break;
             case '=': agregarToken(TipoToken.IGUAL); break;
-            case '>': agregarToken(TipoToken.MAYORQUE); break;
+            case '<': agregarToken(TipoToken.MENORQUE); break; // <-- De la imagen
 
             case ':':
-                if (coincidir('=')) {
+                if (coincidir()) {
                     agregarToken(TipoToken.ASIGNACION); // Maneja :=
                 } else {
-                    // Error: ':' solo no es válido
                     lanzarError("Caracter inesperado ':'. Se esperaba ':='.");
                 }
                 break;
 
-            // Ignorar separadores [cite: 9]
+            // Ignorar separadores
             case ' ':
             case '\r':
             case '\t':
@@ -66,9 +72,9 @@ public class Scanner {
 
             default:
                 if (esDigito(c)) {
-                    numero(); // Maneja números [cite: 7]
+                    numero();
                 } else if (esLetra(c)) {
-                    identificador(); // Maneja IDs y palabras clave [cite: 6, 8]
+                    identificador();
                 } else {
                     lanzarError("Caracter inesperado: " + c);
                 }
@@ -88,13 +94,12 @@ public class Scanner {
     private void numero() {
         while (esDigito(peek())) avanzar();
 
-        String numero = fuente.substring(inicio, actual);
         agregarToken(TipoToken.NUMERO);
     }
 
-    private boolean coincidir(char esperado) {
+    private boolean coincidir() {
         if (esFin()) return false;
-        if (fuente.charAt(actual) != esperado) return false;
+        if (fuente.charAt(actual) != '=') return false;
         actual++;
         return true;
     }
