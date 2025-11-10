@@ -51,7 +51,8 @@ public class Scanner {
             case '/': agregarToken(TipoToken.ENTRE); break;
             case ';': agregarToken(TipoToken.PUNTOYCOMA); break;
             case '=': agregarToken(TipoToken.IGUAL); break;
-            case '<': agregarToken(TipoToken.MENORQUE); break; // <-- De la imagen
+            case '<': agregarToken(TipoToken.MENORQUE); break;
+            case '>': agregarToken(TipoToken.MAYORQUE); break;
 
             case ':':
                 if (coincidir()) {

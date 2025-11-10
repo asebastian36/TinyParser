@@ -1,1 +1,9 @@
-x = 3
+read x;
+if x < 10 then
+  write x + 1
+else
+  repeat
+    i:=((i +2 *(x+y)*(x+1)*x+2*(z+1)*(z+2))) * 5
+  until x = 0
+
+end

@@ -8,6 +8,7 @@ public enum TipoToken {
     ASIGNACION, // :=
     IGUAL,      // =
     MENORQUE,   // <
+    MAYORQUE,   // >
 
     MAS,        // + (adop)
     MENOS,      // - (adop)

@@ -75,13 +75,10 @@ public class Parser {
         consumir(TipoToken.ID, "Se esperaba un identificador (variable) después de 'read'.");
     }
 
-    // Regla: sent-write -> WRITE exp
     private void sentenciaWrite() {
         consumir(TipoToken.WRITE, "Se esperaba 'write'.");
         expresion();
     }
-
-    // --- FIN DE NUEVAS REGLAS ---
 
     private void sentenciaAsignacion() {
         consumir(TipoToken.ID, "Se esperaba un identificador (variable).");
@@ -97,7 +94,7 @@ public class Parser {
     }
 
     private void expSimple() {
-        // 1. Parsea la parte no recursiva (beta)
+        // 1. Parsea la parte no recursiva
         term();
 
         // 2. Implementa el (opsuma term)* con un bucle
@@ -115,17 +112,13 @@ public class Parser {
 
     private void factor() {
         if (coincidir(TipoToken.NUMERO) || coincidir(TipoToken.ID)) {
-            // Ya se consumió, no hacer nada.
         } else if (coincidir(TipoToken.PAREN_IZQ)) {
-            // La gramática dice (exp), así que llamamos a expresion()
             expresion();
             consumir(TipoToken.PAREN_DER, "Se esperaba ')' para cerrar la expresión.");
         } else {
             throw error(peek(), "Se esperaba un Número, un ID o un '('.");
         }
     }
-
-    // --- Métodos de Ayuda ---
 
     private boolean coincidir(TipoToken... tipos) {
         for (TipoToken tipo : tipos) {
